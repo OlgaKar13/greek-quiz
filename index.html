@@ -120,8 +120,8 @@
     <h1>How Greek Are You?</h1>
     <p class="greek">Καλώς ήρθατε!</p>
     <p class="sub">3 questions about Greece.<br>Get <strong>all 3 right</strong> and you win a little something from the booth.</p>
-    <button class="btn" onclick="startGame()">Let's go →</button>
-    <p class="tiny">No Googling — but wild guesses are very welcome.</p>
+    <button class="btn" id="start-btn" onclick="startGame()">Let's go →</button>
+    <p class="tiny" id="start-note">No Googling — but wild guesses are very welcome.</p>
   </section>
 
   <!-- ============ QUESTION ============ -->
@@ -150,7 +150,7 @@
       <div class="note" id="r-code-note"></div>
     </div>
     <div class="stack">
-      <button class="btn" onclick="resetGame()">Next player</button>
+      <button class="btn" id="result-btn" onclick="resetGame()">Next player</button>
     </div>
   </section>
 
@@ -162,6 +162,14 @@
    ============================================================ */
 const WIN_CODE = "FILOXENIA";
 const WIN_CODE_NOTE = "φιλοξενία — literally 'love of strangers'. It's the Greek word for hospitality, and the whole point of this booth. Say it out loud to claim your prize.";
+
+/* How long someone must wait after losing, in seconds.
+   Set to 0 to switch the cooldown off entirely. */
+const COOLDOWN_SECONDS = 180;
+
+/* BOOTH MODE — open the page as  index.html?booth=1  on your own tablet.
+   That device then never waits, so a queue of players is never held up. */
+const BOOTH = new URLSearchParams(location.search).has('booth');
 
 /* ============================================================
    QUESTION POOL — mix of classic & modern Greece.
@@ -327,6 +335,7 @@ function shuffle(arr){
 }
 
 function startGame(){
+  if(secondsLeft() > 0) return;          // still cooling down
   round = dealRound();
   idx = 0; correct = 0;
   show('s-quiz');
@@ -405,14 +414,70 @@ function showResult(){
   document.getElementById('codebox').style.display = won ? 'block' : 'none';
   document.getElementById('r-code').textContent = WIN_CODE;
   document.getElementById('r-code-note').textContent = WIN_CODE_NOTE;
+  if(!won) startCooldown();
   show('s-result');
+  tick();
 }
 
 function resetGame(){
   show('s-welcome');
+  tick();
+}
+
+/* ============================================================
+   Cooldown after a loss.
+   Stored as a timestamp so a page refresh doesn't wipe it.
+   Booth mode ignores it completely.
+   ============================================================ */
+const LOCK_KEY = 'greekQuizLockedUntil';
+
+function lockedUntil(){
+  try{ return parseInt(localStorage.getItem(LOCK_KEY) || '0', 10) || 0; }
+  catch(e){ return 0; }
+}
+function startCooldown(){
+  if(BOOTH || COOLDOWN_SECONDS <= 0) return;
+  try{ localStorage.setItem(LOCK_KEY, String(Date.now() + COOLDOWN_SECONDS*1000)); }
+  catch(e){ /* storage blocked — no cooldown, not worth breaking the game over */ }
+}
+function secondsLeft(){
+  if(BOOTH || COOLDOWN_SECONDS <= 0) return 0;
+  return Math.max(0, Math.ceil((lockedUntil() - Date.now()) / 1000));
+}
+function clock(s){
+  return Math.floor(s/60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+function setBtn(btn, disabled, label){
+  if(!btn) return;
+  btn.disabled = disabled;
+  btn.textContent = label;
+  btn.style.opacity = disabled ? '0.45' : '1';
+  btn.style.cursor  = disabled ? 'default' : 'pointer';
+}
+
+function tick(){
+  const left = secondsLeft();
+
+  if(document.getElementById('s-welcome').classList.contains('active')){
+    setBtn(document.getElementById('start-btn'), left > 0,
+           left > 0 ? 'Another go in ' + clock(left) : "Let's go →");
+  }
+
+  if(document.getElementById('s-result').classList.contains('active')){
+    const btn = document.getElementById('result-btn');
+    if(correct === ROUND_SIZE){
+      setBtn(btn, false, 'Next player');
+    }else{
+      setBtn(btn, left > 0,
+             left > 0 ? 'Try again in ' + clock(left) : 'Try again');
+    }
+  }
 }
 
 loadDeck();
+tick();
+setInterval(tick, 500);
 </script>
 </body>
 </html>
