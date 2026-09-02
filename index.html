@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>How Greek Are You? 🇬🇷</title>
+<style>
+  :root{
+    --blue:#0d5eaf;
+    --blue-dark:#083d73;
+    --blue-light:#4a90d9;
+    --white:#ffffff;
+    --sand:#f6f2e9;
+    --green:#1e9e6a;
+    --red:#d94f4f;
+    --ink:#12293f;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      linear-gradient(160deg,#0d5eaf 0%,#1273c9 45%,#3fa0d8 100%);
+    color:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    padding:16px;min-height:100%;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0 22px,transparent 22px 44px);
+  }
+  .card{
+    position:relative;z-index:1;
+    width:100%;max-width:600px;
+    background:var(--white);
+    border-radius:24px;
+    box-shadow:0 24px 60px rgba(0,0,0,.28);
+    padding:32px 28px;
+    text-align:center;
+  }
+  .screen{display:none}
+  .screen.active{display:block;animation:fade .35s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:2rem;line-height:1.15;margin:.2em 0 .1em;color:var(--blue-dark)}
+  h2{font-size:1.35rem;line-height:1.3;margin:0 0 18px;color:var(--blue-dark)}
+  p.sub{color:#5b7488;font-size:1.02rem;margin:0 0 24px;line-height:1.5}
+  .flag{font-size:3.2rem;margin-bottom:4px;display:block}
+
+  button{font-family:inherit;cursor:pointer;border:none}
+  .btn{
+    display:inline-block;width:100%;
+    background:var(--blue);color:#fff;
+    font-size:1.15rem;font-weight:700;
+    padding:17px 20px;border-radius:14px;
+    transition:transform .12s ease,background .15s ease;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:transparent;color:var(--blue);border:2px solid #d3e2f2;font-size:1rem;padding:13px}
+
+  .progress{display:flex;gap:8px;justify-content:center;margin-bottom:22px}
+  .dot{width:34px;height:6px;border-radius:99px;background:#e3ebf3}
+  .dot.done{background:var(--blue-light)}
+  .dot.now{background:var(--blue)}
+
+  .opts{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+  .opt{
+    background:var(--sand);color:var(--ink);
+    text-align:left;font-size:1.06rem;line-height:1.35;
+    padding:16px 18px;border-radius:14px;
+    border:2px solid transparent;
+    display:flex;align-items:center;gap:12px;
+    transition:transform .12s ease;
+  }
+  .opt:active{transform:scale(.985)}
+  .opt .letter{
+    flex:0 0 30px;height:30px;border-radius:50%;
+    background:#fff;color:var(--blue);
+    font-weight:800;font-size:.9rem;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .opt.correct{background:#e2f6ec;border-color:var(--green)}
+  .opt.correct .letter{background:var(--green);color:#fff}
+  .opt.wrong{background:#fdeaea;border-color:var(--red)}
+  .opt.wrong .letter{background:var(--red);color:#fff}
+  .opt.locked{pointer-events:none;opacity:.55}
+  .opt.correct.locked,.opt.wrong.locked{opacity:1}
+
+  .feedback{
+    margin-top:18px;padding:16px;border-radius:14px;
+    background:#f0f6fc;text-align:left;display:none;
+  }
+  .feedback.show{display:block;animation:fade .3s ease}
+  .feedback .verdict{font-weight:800;font-size:1.05rem;margin-bottom:6px}
+  .feedback .verdict.yes{color:var(--green)}
+  .feedback .verdict.no{color:var(--red)}
+  .feedback .fact{font-size:.96rem;color:#40596e;line-height:1.5}
+
+  .score{font-size:4rem;font-weight:800;color:var(--blue);line-height:1;margin:6px 0 2px}
+  .score small{font-size:1.5rem;color:#9db2c4}
+  .codebox{
+    margin:22px 0;padding:20px;border-radius:16px;
+    background:linear-gradient(135deg,#0d5eaf,#3fa0d8);color:#fff;
+  }
+  .codebox .label{font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+  .codebox .code{font-size:2.1rem;font-weight:800;letter-spacing:.08em;margin-top:6px}
+  .codebox .note{font-size:.9rem;opacity:.9;margin-top:8px;line-height:1.4}
+
+  .stack{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+  .tiny{font-size:.82rem;color:#93a8ba;margin-top:18px}
+  .greek{font-size:1.05rem;color:var(--blue-dark);font-weight:600}
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- ============ WELCOME ============ -->
+  <section id="s-welcome" class="screen active">
+    <span class="flag">🇬🇷</span>
+    <h1>How Greek Are You?</h1>
+    <p class="greek">Καλώς ήρθατε!</p>
+    <p class="sub">3 questions about Greece.<br>Get <strong>all 3 right</strong> and you win a little something from the booth.</p>
+    <button class="btn" onclick="startGame()">Let's go →</button>
+    <p class="tiny">No Googling — but wild guesses are very welcome.</p>
+  </section>
+
+  <!-- ============ QUESTION ============ -->
+  <section id="s-quiz" class="screen">
+    <div class="progress" id="progress"></div>
+    <h2 id="q-text"></h2>
+    <div class="opts" id="opts"></div>
+    <div class="feedback" id="feedback">
+      <div class="verdict" id="verdict"></div>
+      <div class="fact" id="fact"></div>
+    </div>
+    <div class="stack" id="next-wrap" style="display:none">
+      <button class="btn" id="next-btn" onclick="nextQuestion()">Next →</button>
+    </div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section id="s-result" class="screen">
+    <span class="flag" id="r-emoji">🏆</span>
+    <div class="score"><span id="r-score">3</span><small>/3</small></div>
+    <h2 id="r-title"></h2>
+    <p class="sub" id="r-msg"></p>
+    <div class="codebox" id="codebox">
+      <div class="label">Show this word to win</div>
+      <div class="code" id="r-code"></div>
+      <div class="note" id="r-code-note"></div>
+    </div>
+    <div class="stack">
+      <button class="btn" onclick="resetGame()">Next player</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   EDIT ME: the secret word winners say at the booth
+   ============================================================ */
+const WIN_CODE = "FILOXENIA";
+const WIN_CODE_NOTE = "φιλοξενία — literally 'love of strangers'. It's the Greek word for hospitality, and the whole point of this booth. Say it out loud to claim your prize.";
+
+/* ============================================================
+   QUESTION POOL — mix of classic & modern Greece.
+   Each round picks 3 at random. Add/remove freely.
+   answer = index of the correct option (0-based)
+   ============================================================ */
+const POOL = [
+  { q:"What's the furthest you can possibly get from the sea in Greece?",
+    o:["About 130 km — roughly a two-hour drive","About 400 km","About 700 km"],
+    a:0, f:"Nowhere in Greece is more than ~130 km from the coast. The coastline runs 13,676 km — the longest in the Mediterranean, and the third longest in Europe after Norway and Russia." },
+
+  { q:"Roughly how many islands and islets does Greece have?",
+    o:["About 600","About 2,000","About 6,000"],
+    a:2, f:"Around 6,000 islands and islets — but only about 220 of them are actually inhabited." },
+
+  { q:"Which of these did the ancient Greeks give us?",
+    o:["Democracy","Gunpowder","The printing press"],
+    a:0, f:"'Demos' (people) + 'kratos' (power). Athens, around the 5th century BC." },
+
+  { q:"What is «tzatziki» made of?",
+    o:["Yogurt, cucumber and garlic","Chickpeas and tahini","Eggplant and tomato"],
+    a:0, f:"Strained yogurt, grated cucumber, garlic, olive oil. Never, ever with mayonnaise." },
+
+  { q:"Who was the ancient Greek god of the sea?",
+    o:["Hermes","Poseidon","Hephaestus"],
+    a:1, f:"Poseidon, brother of Zeus. Temperamental, carried a trident, held a grudge." },
+
+  { q:"What do Greeks traditionally say when raising a glass?",
+    o:["Yamas! (Γεια μας)","Opa!","Kalimera!"],
+    a:0, f:"«Γεια μας» means 'to our health'. 'Opa!' is more of an exclamation of joy — often near breaking plates." },
+
+  { q:"Which mountain was believed to be the home of the Greek gods?",
+    o:["Mount Parnassus","Mount Athos","Mount Olympus"],
+    a:2, f:"Mount Olympus — at 2,917 m it's also the highest mountain in Greece." },
+
+  { q:"The word «marathon» comes from…",
+    o:["A Greek runner's name","A battle and the village near it","The Greek word for 'endurance'"],
+    a:1, f:"The Battle of Marathon (490 BC). A messenger supposedly ran ~40 km to Athens with the news." },
+
+  { q:"What is «feta» officially protected as?",
+    o:["A Greek-only product under EU law","A UNESCO heritage recipe","An Olympic sponsor"],
+    a:0, f:"Since 2002, only cheese made in Greece to strict rules can legally be called feta in the EU." },
+
+  { q:"Which sea lies to the EAST of mainland Greece?",
+    o:["The Ionian Sea","The Aegean Sea","The Adriatic Sea"],
+    a:1, f:"Aegean to the east, Ionian to the west. Both extremely good for swimming." },
+
+  { q:"Halkidiki — where we are right now — is famous for having…",
+    o:["Three peninsulas shaped like three fingers","An active volcano","Greece's only desert"],
+    a:0, f:"Kassandra, Sithonia and Mount Athos. Mount Athos is a self-governing monastic state that women have not been allowed to enter for over 1,000 years." },
+
+  { q:"Which of these words is NOT originally Greek?",
+    o:["Chaos","Drama","Cinnamon"],
+    a:2, f:"'Chaos' and 'drama' are straight from Greek. Around 150,000 English words have Greek roots." },
+
+  { q:"In the Odyssey, how long does it take Odysseus to get home from Troy?",
+    o:["One year","Ten years","Forty years"],
+    a:1, f:"Ten years of storms, monsters and a one-eyed giant — for a journey that a modern ferry does in about a day." },
+
+  { q:"Where were the first modern Olympic Games held in 1896?",
+    o:["Paris","Athens","Olympia"],
+    a:1, f:"Athens, in the marble Panathenaic Stadium — which you can still visit today." },
+
+  { q:"What do Greeks actually call their own country?",
+    o:["Grecia","Ελλάδα — Ellada (Hellas)","Attica"],
+    a:1, f:"Greeks have called it Hellas for roughly 3,000 years. 'Greece' comes from the Latin 'Graecia' — a Roman nickname that stuck." },
+
+  { q:"The Parthenon — the temple on the Acropolis in Athens — was built roughly…",
+    o:["800 years ago","1,200 years ago","2,450 years ago"],
+    a:2, f:"Between 447 and 432 BC — and the whole thing went up in about 15 years. It was dedicated to Athena, goddess of wisdom, who the city is named after." },
+
+  { q:"Which famous philosopher was Plato's student?",
+    o:["Socrates","Pythagoras","Aristotle"],
+    a:2, f:"Socrates taught Plato, Plato taught Aristotle, Aristotle taught Alexander the Great. Fun fact: Aristotle was born in Stagira — right here in Halkidiki." },
+
+  { q:"What is «souvlaki»?",
+    o:["Grilled meat on a skewer","A layered pasta bake","A honey pastry"],
+    a:0, f:"Small pieces of grilled meat on a skewer. The pasta bake is pastitsio, the pastry is baklava." },
+
+  { q:"Thessaloniki, the big city just up the road, is named after…",
+    o:["Alexander the Great's half-sister","A Byzantine emperor","The goddess of wisdom"],
+    a:0, f:"Thessalonike, daughter of Philip II. Her name means 'victory in Thessaly' — she was born the day her father won a battle there. Her husband Cassander founded the city around 315 BC and named it for her." },
+
+  { q:"Santorini's dramatic shape was created by…",
+    o:["A glacier","A volcanic eruption","An earthquake in 1956"],
+    a:1, f:"A massive eruption around 1600 BC collapsed the island's centre into the sea, forming the caldera." },
+
+  { q:"What does «Καλημέρα» (kalimera) mean?",
+    o:["Good morning","Thank you","See you later"],
+    a:0, f:"Literally 'good day'. «Ευχαριστώ» is thank you — the one everyone struggles with." },
+
+  { q:"In a Greek café, if you order a «freddo» you get…",
+    o:["A hot chocolate with cream","An espresso shaken with ice until it goes foamy","A small glass of aniseed liqueur"],
+    a:1, f:"A Greek invention — Athens, around 1991. Greeks drink it all year, including in February. Order one this week: «Ena freddo espresso, parakalo»." },
+
+  { q:"Which of these is a real Greek island?",
+    o:["Kefalonia","Valdonia","Marmoros"],
+    a:0, f:"Kefalonia is the largest of the Ionian islands. The other two we made up." }
+];
+
+/* ============================================================ */
+const ROUND_SIZE = 3;
+let round = [], idx = 0, correct = 0, answered = false;
+
+/* --- No-repeat logic ------------------------------------------
+   The pool is treated like a deck of cards. Each player is dealt
+   ROUND_SIZE questions off the top; those questions are then gone
+   until the whole deck has been used up. When the deck runs out we
+   reshuffle, and we re-deal if the new top cards overlap with what
+   the previous player just saw. So: no two players in a row share a
+   question, and nobody sees a repeat until all 22 have been asked.
+   State survives an accidental page refresh.
+   ------------------------------------------------------------- */
+const STORE_KEY = 'greekQuizDeck';
+let deckIdx = [];   // pool positions not yet dealt this cycle
+let lastIdx = [];   // pool positions the previous player got
+
+function loadDeck(){
+  try{
+    const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+    if(s && Array.isArray(s.deck) && Array.isArray(s.last)){
+      const valid = i => Number.isInteger(i) && i >= 0 && i < POOL.length;
+      deckIdx = s.deck.filter(valid);
+      lastIdx = s.last.filter(valid);
+    }
+  }catch(e){ /* private browsing or storage disabled — carry on */ }
+}
+
+function saveDeck(){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify({deck:deckIdx, last:lastIdx}));
+  }catch(e){ /* not fatal — the deck just won't survive a refresh */ }
+}
+
+function dealRound(){
+  if(deckIdx.length < ROUND_SIZE){
+    let fresh, tries = 0;
+    do{
+      fresh = shuffle(POOL.map((_, i) => i));
+      tries++;
+    } while(tries < 50 && fresh.slice(0, ROUND_SIZE).some(i => lastIdx.includes(i)));
+    deckIdx = fresh;
+  }
+  const picked = deckIdx.splice(0, ROUND_SIZE);
+  lastIdx = picked.slice();
+  saveDeck();
+  return picked.map(i => POOL[i]);
+}
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function startGame(){
+  round = dealRound();
+  idx = 0; correct = 0;
+  show('s-quiz');
+  renderQuestion();
+}
+
+function renderProgress(){
+  const p = document.getElementById('progress');
+  p.innerHTML = '';
+  for(let i=0;i<ROUND_SIZE;i++){
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < idx ? ' done' : i === idx ? ' now' : '');
+    p.appendChild(d);
+  }
+}
+
+function renderQuestion(){
+  answered = false;
+  renderProgress();
+  const item = round[idx];
+
+  document.getElementById('q-text').textContent = item.q;
+  document.getElementById('feedback').classList.remove('show');
+  document.getElementById('next-wrap').style.display = 'none';
+
+  // shuffle options but remember which is right
+  const order = shuffle(item.o.map((text,i)=>({text, right: i === item.a})));
+  const letters = ['A','B','C','D'];
+  const box = document.getElementById('opts');
+  box.innerHTML = '';
+
+  order.forEach((opt, i) => {
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.innerHTML = '<span class="letter">'+letters[i]+'</span><span>'+opt.text+'</span>';
+    b.onclick = () => choose(b, opt.right, box, item.f);
+    box.appendChild(b);
+  });
+
+  document.getElementById('next-btn').textContent =
+    (idx === ROUND_SIZE - 1) ? 'See my result →' : 'Next question →';
+}
+
+function choose(btn, isRight, box, fact){
+  if(answered) return;
+  answered = true;
+
+  Array.from(box.children).forEach(c => c.classList.add('locked'));
+  btn.classList.add(isRight ? 'correct' : 'wrong');
+  if(isRight) correct++;
+
+  const v = document.getElementById('verdict');
+  v.textContent = isRight ? '✅ Σωστά! Correct.' : '❌ Not quite.';
+  v.className = 'verdict ' + (isRight ? 'yes' : 'no');
+  document.getElementById('fact').textContent = fact;
+  document.getElementById('feedback').classList.add('show');
+  document.getElementById('next-wrap').style.display = 'flex';
+}
+
+function nextQuestion(){
+  idx++;
+  if(idx >= ROUND_SIZE){ showResult(); return; }
+  renderQuestion();
+}
+
+function showResult(){
+  const won = correct === ROUND_SIZE;
+  document.getElementById('r-score').textContent = correct;
+  document.getElementById('r-emoji').textContent = won ? '🏆' : (correct === 2 ? '🫒' : '🇬🇷');
+  document.getElementById('r-title').textContent = won
+    ? 'Μπράβο! You did it.'
+    : (correct === 2 ? 'So close!' : 'Thanks for playing!');
+  document.getElementById('r-msg').textContent = won
+    ? 'Perfect score. You have earned your prize — and honorary Greek status for the evening.'
+    : 'You need all 3 to win a prize. Come talk to me at the booth and try again — I might drop a hint.';
+  document.getElementById('codebox').style.display = won ? 'block' : 'none';
+  document.getElementById('r-code').textContent = WIN_CODE;
+  document.getElementById('r-code-note').textContent = WIN_CODE_NOTE;
+  show('s-result');
+}
+
+function resetGame(){
+  show('s-welcome');
+}
+
+loadDeck();
+</script>
+</body>
+</html>
